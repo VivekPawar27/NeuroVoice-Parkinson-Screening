@@ -1,13 +1,15 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 function Result() {
-  const navigate = useNavigate();
+  const location = useLocation();
+  const data = location.state;
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Analysis Results</h1>
-      <p>Your screening results will appear here.</p>
-      <button onClick={() => navigate("/")}>Back to Home</button>
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
+      <h2>Screening Result</h2>
+      <h1>{data?.risk_score}%</h1>
+      <h3>{data?.risk_level}</h3>
+      <p>{data?.explanation}</p>
     </div>
   );
 }
