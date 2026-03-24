@@ -132,30 +132,36 @@ function Upload() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 to-teal-100 flex items-center justify-center px-4 py-10">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl">
-        <h2 className="text-3xl font-bold text-teal-800 mb-2 text-center">
+    <div 
+      className="min-h-screen flex items-center justify-center px-4 py-10"
+      style={{
+        backgroundImage: "linear-gradient(135deg, #d0e7f9 0%, #e0f2fe 50%, #cffafe 100%)"
+      }}
+    >
+      <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-2xl w-full max-w-2xl border border-sky-200/50">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-sky-900 to-cyan-900 bg-clip-text text-transparent mb-2 text-center">
           Voice Recording
         </h2>
-        <p className="text-teal-600 text-center mb-8">
+        <p className="text-sky-700 text-center mb-8 font-medium">
           Record your voice or upload an audio file for analysis
         </p>
 
-        {/* Recording Section */}
-        <div className="bg-teal-50 p-8 rounded-xl mb-8">
+        <div className="bg-gradient-to-br from-sky-50 to-cyan-50 p-8 rounded-2xl mb-8 border border-sky-200">
           <div className="text-center mb-6">
             {isRecording && (
               <div className="inline-block mb-4">
-                <div className="text-lg font-semibold text-teal-700">
+                <div className="text-lg font-semibold text-sky-700">
                   Recording: {formatTime(recordingTime)}
                 </div>
                 <div className="flex justify-center gap-2 mt-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" style={{animationDelay: "0.2s"}}></div>
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" style={{animationDelay: "0.4s"}}></div>
                 </div>
               </div>
             )}
             {!isRecording && !audioURL && (
-              <p className="text-teal-700 font-medium mb-4">
+              <p className="text-sky-700 font-medium mb-4">
                 Click below to start recording
               </p>
             )}
@@ -166,12 +172,11 @@ function Upload() {
             )}
           </div>
 
-          {/* Recording Controls */}
           <div className="flex gap-4 justify-center mb-6 flex-wrap">
             {!isRecording && !audioURL && (
               <button
                 onClick={startRecording}
-                className="flex items-center gap-2 px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition transform hover:scale-105"
+                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
               >
                 🎙️ Start Recording
               </button>
@@ -180,7 +185,7 @@ function Upload() {
             {isRecording && (
               <button
                 onClick={stopRecording}
-                className="flex items-center gap-2 px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg transition"
+                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
               >
                 ⏹️ Stop Recording
               </button>
@@ -190,7 +195,7 @@ function Upload() {
               <>
                 <button
                   onClick={resetRecording}
-                  className="px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition"
+                  className="px-8 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold rounded-xl transition"
                 >
                   🔄 Record Again
                 </button>
@@ -198,10 +203,9 @@ function Upload() {
             )}
           </div>
 
-          {/* Audio Playback */}
           {audioURL && (
-            <div className="bg-white p-6 rounded-lg">
-              <p className="text-sm font-semibold text-gray-700 mb-4">Playback:</p>
+            <div className="bg-white p-6 rounded-xl">
+              <p className="text-sm font-semibold text-sky-700 mb-4">Playback:</p>
               <audio
                 src={audioURL}
                 controls
@@ -211,16 +215,15 @@ function Upload() {
           )}
         </div>
 
-        {/* File Upload Section */}
-        <div className="border-2 border-dashed border-teal-300 rounded-xl p-8 bg-teal-50 mb-8">
-          <p className="text-center text-gray-700 mb-4 font-medium">
+        <div className="border-2 border-dashed border-sky-300 rounded-2xl p-8 bg-sky-50 mb-8">
+          <p className="text-center text-sky-700 mb-4 font-medium">
             Or upload an existing recording
           </p>
           <input
             type="file"
             accept="audio/*"
             onChange={handleFileUpload}
-            className="w-full p-3 border-2 border-teal-200 rounded-lg focus:outline-none focus:border-teal-600 cursor-pointer"
+            className="w-full p-3 border-2 border-sky-200 rounded-xl focus:outline-none focus:border-sky-600 cursor-pointer"
           />
           {file && (
             <p className="text-sm text-green-700 mt-3 font-medium">
@@ -229,23 +232,21 @@ function Upload() {
           )}
         </div>
 
-        {/* Analyze Button */}
         {(audioURL || file) && (
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className={`w-full py-4 px-6 text-lg font-bold rounded-lg transition transform ${
+            className={`w-full py-4 px-6 text-lg font-bold rounded-xl transition transform ${
               isAnalyzing
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-teal-600 hover:bg-teal-700 text-white hover:scale-105"
+                : "bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 text-white hover:scale-105"
             }`}
           >
             {isAnalyzing ? "⏳ Analyzing..." : "🔍 Analyze Voice"}
           </button>
         )}
 
-        {/* Recording Tips */}
-        <div className="mt-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded">
+        <div className="mt-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded-xl">
           <p className="font-semibold text-blue-900 mb-3">📋 Recording Tips:</p>
           <ul className="text-sm text-blue-800 space-y-2">
             <li>✓ Record in a quiet environment</li>
