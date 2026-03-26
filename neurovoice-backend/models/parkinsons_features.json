@@ -1,0 +1,30 @@
+{
+  "features": [
+    "MDVP:Fo(Hz)",
+    "MDVP:Fhi(Hz)",
+    "MDVP:Flo(Hz)",
+    "MDVP:Jitter(%)",
+    "MDVP:Jitter(Abs)",
+    "MDVP:RAP",
+    "MDVP:PPQ",
+    "Jitter:DDP",
+    "MDVP:Shimmer",
+    "MDVP:Shimmer(dB)",
+    "Shimmer:APQ3",
+    "Shimmer:APQ5",
+    "MDVP:APQ",
+    "Shimmer:DDA",
+    "NHR",
+    "HNR",
+    "RPDE",
+    "DFA",
+    "spread1",
+    "spread2",
+    "D2",
+    "PPE"
+  ],
+  "model_type": "SVM",
+  "accuracy": 0.9230769230769231,
+  "f1_score": 0.9508196721311475,
+  "roc_auc": 0.9551724137931035
+}
