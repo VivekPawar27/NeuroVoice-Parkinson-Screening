@@ -1,0 +1,126 @@
+{
+  "patients": {
+    "rutuja malge": {
+      "name": "rutuja malge",
+      "age": "22",
+      "dob": "2005-02-14",
+      "medical_history": "parkinson ",
+      "records": [
+        {
+          "id": 1,
+          "timestamp": "2026-03-26T14:42:15.805680",
+          "risk_score": 0,
+          "risk_level": "Error",
+          "probability_healthy": 0,
+          "probability_parkinsons": 0,
+          "features": {}
+        }
+      ]
+    },
+    "radhika": {
+      "name": "radhika",
+      "age": "23",
+      "dob": "2026-03-12",
+      "medical_history": "parkinson",
+      "records": [
+        {
+          "id": 1,
+          "timestamp": "2026-03-26T15:10:37.888004",
+          "risk_score": 0,
+          "risk_level": "Error",
+          "probability_healthy": 0,
+          "probability_parkinsons": 0,
+          "features": {}
+        }
+      ]
+    },
+    "Vivek bhopale": {
+      "name": "Vivek bhopale",
+      "age": "24",
+      "dob": "2002-04-18",
+      "medical_history": "parkinson",
+      "records": [
+        {
+          "id": 1,
+          "timestamp": "2026-03-26T15:36:10.378695",
+          "risk_score": 0,
+          "risk_level": "Error",
+          "probability_healthy": 0,
+          "probability_parkinsons": 0,
+          "features": {}
+        }
+      ]
+    },
+    "vivek pawar": {
+      "name": "vivek pawar",
+      "age": "22",
+      "dob": "2004-09-27",
+      "medical_history": "",
+      "records": [
+        {
+          "id": 1,
+          "timestamp": "2026-03-26T17:11:28.773758",
+          "risk_score": 0,
+          "risk_level": "Error",
+          "probability_healthy": 0,
+          "probability_parkinsons": 0,
+          "features": {}
+        }
+      ]
+    },
+    "anuradha": {
+      "name": "anuradha",
+      "age": "22",
+      "dob": "2004-03-08",
+      "medical_history": "",
+      "records": [
+        {
+          "id": 1,
+          "timestamp": "2026-03-26T20:32:43.219536",
+          "risk_score": 0,
+          "risk_level": "Error",
+          "probability_healthy": 0,
+          "probability_parkinsons": 0,
+          "features": {}
+        }
+      ]
+    }
+  },
+  "notifications": [
+    {
+      "id": 1,
+      "patient_name": "rutuja malge",
+      "message": "Voice analysis completed. Risk Score: 0%",
+      "timestamp": "2026-03-26T14:42:15.808917",
+      "read": true
+    },
+    {
+      "id": 2,
+      "patient_name": "radhika",
+      "message": "Voice analysis completed. Risk Score: 0%",
+      "timestamp": "2026-03-26T15:10:37.895529",
+      "read": true
+    },
+    {
+      "id": 3,
+      "patient_name": "Vivek bhopale",
+      "message": "Voice analysis completed. Risk Score: 0%",
+      "timestamp": "2026-03-26T15:36:10.383057",
+      "read": true
+    },
+    {
+      "id": 4,
+      "patient_name": "vivek pawar",
+      "message": "Voice analysis completed. Risk Score: 0%",
+      "timestamp": "2026-03-26T17:11:28.779079",
+      "read": true
+    },
+    {
+      "id": 5,
+      "patient_name": "anuradha",
+      "message": "Voice analysis completed. Risk Score: 0%",
+      "timestamp": "2026-03-26T20:32:43.227415",
+      "read": false
+    }
+  ]
+}
