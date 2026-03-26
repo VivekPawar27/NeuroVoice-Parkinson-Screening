@@ -1,0 +1,11 @@
+{
+  "notifications": [
+    {
+      "id": 1,
+      "patient_name": "rutuja",
+      "message": "New screening completed for rutuja: Error Risk",
+      "timestamp": "2026-03-26T23:48:01.497926",
+      "read": false
+    }
+  ]
+}

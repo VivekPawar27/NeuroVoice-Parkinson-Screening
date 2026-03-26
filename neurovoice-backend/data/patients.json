@@ -1,0 +1,22 @@
+{
+  "patients": [
+    {
+      "name": "rutuja",
+      "age": "22",
+      "dob": "2004-02-14",
+      "medical_history": "",
+      "records": [
+        {
+          "timestamp": "2026-03-26T23:48:01.497077",
+          "risk_score": 50,
+          "risk_level": "Error",
+          "probability_healthy": null,
+          "probability_parkinsons": null,
+          "audio_file": "recording.wav"
+        }
+      ],
+      "created_at": "2026-03-26T23:48:01.181259",
+      "last_updated": "2026-03-26T23:48:01.497127"
+    }
+  ]
+}

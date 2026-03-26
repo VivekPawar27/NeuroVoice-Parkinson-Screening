@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Header from "../components/Header";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -46,12 +47,14 @@ function Home() {
   ];
 
   const shapData = [
-    { feature: "Jitter", value: 35, fill: "#4ade80" },
-    { feature: "Tremor", value: 42, fill: "#36b9cc" },
-    { feature: "Speech", value: 48, fill: "#fbbf24" },
-    { feature: "Pitch", value: 38, fill: "#f87171" },
-    { feature: "Other", value: 30, fill: "#c084fc" },
+    { feature: "Jitter", value: 35, fill: "#6EA89E" },
+    { feature: "Tremor", value: 42, fill: "#8FC6B7" },
+    { feature: "Speech", value: 48, fill: "#A6D2C8" },
+    { feature: "Pitch", value: 38, fill: "#B8D6B2" },
+    { feature: "Other", value: 30, fill: "#CFE5D5" },
   ];
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -171,6 +174,35 @@ function Home() {
       const result = await predictAudioWithRetry(audioBlob, patientInfo);
 
       if (result.success) {
+        // Save patient data to backend
+        try {
+          await fetch(`${API_BASE_URL}/patients`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: patientName,
+              age: patientAge,
+              dob: patientDOB,
+              medical_history: patientMedicalHistory
+            })
+          });
+
+          // Save screening record to backend
+          await fetch(`${API_BASE_URL}/patients/${encodeURIComponent(patientName)}/records`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              risk_score: result.data.risk_score || Math.round((result.data.probability_parkinsons || 0.5) * 100),
+              risk_level: result.data.risk_level,
+              probability_healthy: result.data.probability_healthy,
+              probability_parkinsons: result.data.probability_parkinsons,
+              audio_file: "recording.wav"
+            })
+          });
+        } catch (err) {
+          console.error("Error saving patient data:", err);
+        }
+
         setPredictionResult(result.data);
         setShowAnalysisSection(true);
       } else {
@@ -200,70 +232,132 @@ function Home() {
 
   return (
     <div 
-      className="min-h-screen bg-gradient-to-br from-sky-200 via-sky-100 to-cyan-100 px-4 py-8"
+      className="min-h-screen"
       style={{
-        backgroundImage: "radial-gradient(circle at 20% 50%, rgba(191, 219, 254, 0.4), transparent), radial-gradient(circle at 80% 80%, rgba(165, 243, 252, 0.4), transparent), linear-gradient(135deg, #d0e7f9 0%, #e0f2fe 50%, #cffafe 100%)"
+        backgroundImage: "radial-gradient(circle at 10% 30%, rgba(207, 229, 213, 0.5), transparent), radial-gradient(circle at 90% 70%, rgba(166, 210, 200, 0.4), transparent), radial-gradient(circle at 50% 100%, rgba(184, 214, 178, 0.3), transparent), linear-gradient(135deg, #f9fefb 0%, #CFE5D5 35%, #A6D2C8 70%, #CFE5D5 100%)"
       }}
     >
-      <div className="max-w-7xl mx-auto">
+      <Header />
+      
+      <div className="max-w-7xl mx-auto px-4 py-8">
         
-        {/* SECTION 1: NeuroVoice Info + Patient Form */}
-        <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-sky-200/50 hover:shadow-3xl transition mb-6">
+        {/* SECTION 1: NeuroVoice Title & Info */}
+        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 mb-6" style={{ borderColor: "#CFE5D5" }}>
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold text-sky-900 mb-2">NeuroVoice</h1>
-            <p className="text-2xl text-sky-800 font-semibold">Early Parkinson's Risk Screening</p>
+            <h1 className="text-5xl font-bold mb-2" style={{
+              backgroundImage: "linear-gradient(135deg, #1F4F47 0%, #2D5A4F 50%, #3A6B63 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text"
+            }}>
+              🧠 NeuroVoice
+            </h1>
+            <p style={{ 
+              backgroundImage: "linear-gradient(135deg, #1F4F47 0%, #3A6B63 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              fontSize: "24px",
+              fontWeight: "600"
+            }}>
+              Early Parkinson's Risk Screening
+            </p>
           </div>
 
-          <div className="border-t border-sky-200 pt-8">
-            <h2 className="text-2xl font-bold text-sky-900 mb-6">📋 Patient Information</h2>
+          {/* NeuroVoice Info Section */}
+          <div className="bg-gradient-to-r rounded-2xl p-6 mb-8" style={{
+            backgroundImage: "linear-gradient(135deg, rgba(207, 229, 213, 0.3), rgba(166, 210, 200, 0.2))",
+            borderLeft: "4px solid #6EA89E"
+          }}>
+            <h3 style={{ color: "#1F4F47", fontSize: "18px", fontWeight: "600", marginBottom: "12px" }}>
+              ℹ️ About NeuroVoice
+            </h3>
+            <p style={{ color: "#2D5A4F", fontSize: "14px", lineHeight: "1.7" }}>
+              NeuroVoice is an advanced AI-powered screening tool designed to detect early signs of Parkinson's disease through voice analysis. 
+              Our proprietary machine learning model analyzes voice patterns, tremor characteristics, and speech features to provide a preliminary risk assessment. 
+              <strong> This tool is for informational purposes only and should not replace professional medical evaluation.</strong>
+            </p>
+          </div>
+
+          {/* Section 2: Patient Form */}
+          <div className="border-t" style={{ borderColor: "#CFE5D5", paddingTop: "24px" }}>
+            <h2 className="text-2xl font-bold mb-6" style={{ color: "#1F4F47" }}>📋 Patient Information</h2>
             
             {(formError || analysisError) && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+              <div className="mb-4 p-4 rounded-xl text-red-700" style={{
+                backgroundColor: "rgba(220, 38, 38, 0.1)",
+                borderLeft: "4px solid #dc2626"
+              }}>
                 {formError || analysisError}
               </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-semibold text-sky-900 mb-2">Name *</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: "#1F4F47" }}>Name *</label>
                 <input 
                   type="text" 
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
                   placeholder="Enter patient name" 
-                  className="w-full px-4 py-3 bg-sky-50 border border-sky-200 rounded-xl focus:outline-none focus:border-sky-500 text-sky-900"
+                  className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 transition"
+                  style={{
+                    backgroundColor: "rgba(207, 229, 213, 0.4)",
+                    borderColor: "#A6D2C8",
+                    borderWidth: "2px",
+                    color: "#1F4F47",
+                    focusRingColor: "#6EA89E"
+                  }}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-sky-900 mb-2">Age</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: "#1F4F47" }}>Age</label>
                 <input 
                   type="number" 
                   value={patientAge}
                   onChange={(e) => setPatientAge(e.target.value)}
                   placeholder="Age" 
-                  className="w-full px-4 py-3 bg-sky-50 border border-sky-200 rounded-xl focus:outline-none focus:border-sky-500 text-sky-900"
+                  className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 transition"
+                  style={{
+                    backgroundColor: "rgba(207, 229, 213, 0.4)",
+                    borderColor: "#A6D2C8",
+                    borderWidth: "2px",
+                    color: "#1F4F47"
+                  }}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-sky-900 mb-2">Date of Birth</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: "#1F4F47" }}>Date of Birth</label>
                 <input 
                   type="date" 
                   value={patientDOB}
                   onChange={(e) => setPatientDOB(e.target.value)}
-                  className="w-full px-4 py-3 bg-sky-50 border border-sky-200 rounded-xl focus:outline-none focus:border-sky-500 text-sky-900"
+                  className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 transition"
+                  style={{
+                    backgroundColor: "rgba(207, 229, 213, 0.4)",
+                    borderColor: "#A6D2C8",
+                    borderWidth: "2px",
+                    color: "#1F4F47"
+                  }}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-sky-900 mb-2">Medical History</label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: "#1F4F47" }}>Medical History</label>
                 <input 
                   type="text" 
                   value={patientMedicalHistory}
                   onChange={(e) => setPatientMedicalHistory(e.target.value)}
                   placeholder="Any relevant medical history" 
-                  className="w-full px-4 py-3 bg-sky-50 border border-sky-200 rounded-xl focus:outline-none focus:border-sky-500 text-sky-900"
+                  className="w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 transition"
+                  style={{
+                    backgroundColor: "rgba(207, 229, 213, 0.4)",
+                    borderColor: "#A6D2C8",
+                    borderWidth: "2px",
+                    color: "#1F4F47"
+                  }}
                 />
               </div>
             </div>
@@ -272,41 +366,59 @@ function Home() {
 
         {/* SECTION 2: Voice Recording Interface */}
         {!showAnalysisSection && (
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-sky-200/50 hover:shadow-3xl transition mb-6">
-            <h2 className="text-2xl font-bold text-sky-900 mb-6">🎤 Recording Guidelines</h2>
+          <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 mb-6" style={{ borderColor: "#CFE5D5" }}>
+            <h2 className="text-2xl font-bold mb-6" style={{ color: "#1F4F47" }}>🎤 Recording Guidelines</h2>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl p-4 text-center border border-sky-100">
+              <div className="rounded-xl p-4 text-center border-2" style={{
+                backgroundColor: "rgba(207, 229, 213, 0.2)",
+                borderColor: "#CFE5D5"
+              }}>
                 <p className="text-3xl mb-2">🔤</p>
-                <p className="text-sm font-semibold text-sky-900">Clear Speech</p>
+                <p className="text-sm font-semibold" style={{ color: "#1F4F47" }}>Clear Speech</p>
               </div>
-              <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl p-4 text-center border border-sky-100">
+              <div className="rounded-xl p-4 text-center border-2" style={{
+                backgroundColor: "rgba(166, 210, 200, 0.2)",
+                borderColor: "#A6D2C8"
+              }}>
                 <p className="text-3xl mb-2">🔇</p>
-                <p className="text-sm font-semibold text-sky-900">Quiet Environment</p>
+                <p className="text-sm font-semibold" style={{ color: "#1F4F47" }}>Quiet Environment</p>
               </div>
-              <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl p-4 text-center border border-sky-100">
+              <div className="rounded-xl p-4 text-center border-2" style={{
+                backgroundColor: "rgba(143, 198, 183, 0.2)",
+                borderColor: "#8FC6B7"
+              }}>
                 <p className="text-3xl mb-2">⏱️</p>
-                <p className="text-sm font-semibold text-sky-900">Duration: 15-30 sec</p>
+                <p className="text-sm font-semibold" style={{ color: "#1F4F47" }}>Duration: 15-30 sec</p>
               </div>
-              <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl p-4 text-center border border-sky-100">
+              <div className="rounded-xl p-4 text-center border-2" style={{
+                backgroundColor: "rgba(110, 168, 158, 0.2)",
+                borderColor: "#6EA89E"
+              }}>
                 <p className="text-3xl mb-2">🎙️</p>
-                <p className="text-sm font-semibold text-sky-900">6-8 Inches Away</p>
+                <p className="text-sm font-semibold" style={{ color: "#1F4F47" }}>6-8 Inches Away</p>
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
-              <p className="text-blue-900 font-semibold">⏱️ Duration: MINIMUM 15 seconds - MAXIMUM 30 seconds</p>
+            <div className="rounded-xl p-4 mb-8 border-l-4" style={{
+              backgroundColor: "rgba(207, 229, 213, 0.3)",
+              borderColor: "#6EA89E",
+              color: "#1F4F47"
+            }}>
+              <p className="font-semibold">⏱️ Duration: MINIMUM 15 seconds - MAXIMUM 30 seconds</p>
             </div>
 
             <div className="flex flex-col items-center">
               {/* Microphone Circle with Timer */}
               <div className="relative w-40 h-40 mb-8 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 animate-pulse"></div>
-                <div className="absolute inset-2 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center border-4 border-sky-300">
+                <div className="absolute inset-0 rounded-full animate-pulse" style={{
+                  backgroundImage: "linear-gradient(135deg, #6EA89E, #8FC6B7)"
+                }}></div>
+                <div className="absolute inset-2 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center border-4" style={{ borderColor: "#A6D2C8" }}>
                   {isRecording ? (
                     <div className="text-center">
                       <div className="text-4xl mb-2">🎤</div>
-                      <p className="text-2xl font-bold text-sky-900">{formatTime(recordingTime)}</p>
+                      <p className="text-2xl font-bold" style={{ color: "#1F4F47" }}>{formatTime(recordingTime)}</p>
                     </div>
                   ) : (
                     <div className="text-center">
@@ -320,17 +432,20 @@ function Home() {
               {isRecording && showMinimumWarning && (
                 <div className="text-center mb-6">
                   <p className="text-4xl mb-2">⭐</p>
-                  <p className="text-red-600 font-semibold text-lg">Record voice to minimum of 15 sec</p>
+                  <p className="font-semibold text-lg" style={{ color: "#dc2626" }}>Record voice to minimum of 15 sec</p>
                 </div>
               )}
 
               {/* Progress Bar */}
               {isRecording && (
                 <div className="w-full max-w-xs mb-6">
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(207, 229, 213, 0.5)" }}>
                     <div 
-                      className="h-full bg-gradient-to-r from-red-500 to-blue-500 transition-all duration-100"
-                      style={{width: `${Math.min((recordingTime / 30) * 100, 100)}%`}}
+                      className="h-full transition-all duration-100"
+                      style={{
+                        width: `${Math.min((recordingTime / 30) * 100, 100)}%`,
+                        backgroundImage: "linear-gradient(90deg, #6EA89E, #A6D2C8)"
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -342,8 +457,9 @@ function Home() {
                   {[...Array(12)].map((_, i) => (
                     <div
                       key={i}
-                      className="w-2 bg-gradient-to-t from-blue-500 to-cyan-400 rounded-full"
+                      className="w-2 rounded-full"
                       style={{
+                        backgroundImage: "linear-gradient(to top, #6EA89E, #A6D2C8)",
                         height: `${30 + Math.random() * 70}%`,
                         animation: `pulse 0.3s ease-in-out infinite`,
                         animationDelay: `${i * 0.04}s`
@@ -358,7 +474,10 @@ function Home() {
                 {!isRecording && !audioURL && (
                   <button
                     onClick={startRecording}
-                    className="px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl hover:from-red-600 hover:to-red-700 transition transform hover:scale-105 shadow-lg"
+                    className="px-8 py-3 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
+                    style={{
+                      backgroundImage: "linear-gradient(135deg, #dc2626, #991b1b)"
+                    }}
                   >
                     ▶️ Start Recording
                   </button>
@@ -368,11 +487,13 @@ function Home() {
                   <button
                     onClick={stopRecording}
                     disabled={!canStopRecording}
-                    className={`px-8 py-3 font-bold rounded-xl transition transform hover:scale-105 shadow-lg ${
-                      canStopRecording
-                        ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800"
-                        : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    }`}
+                    className="px-8 py-3 font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
+                    style={{
+                      backgroundImage: canStopRecording ? "linear-gradient(135deg, #6EA89E, #8FC6B7)" : "none",
+                      backgroundColor: canStopRecording ? undefined : "#D1D5DB",
+                      color: canStopRecording ? "white" : "#6B7280",
+                      cursor: canStopRecording ? "pointer" : "not-allowed"
+                    }}
                     title={!canStopRecording ? "Minimum 15 seconds required" : ""}
                   >
                     ⏹️ Stop Recording
@@ -383,14 +504,22 @@ function Home() {
                   <>
                     <button
                       onClick={resetRecording}
-                      className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-orange-700 transition transform hover:scale-105 shadow-lg"
+                      className="px-8 py-3 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
+                      style={{
+                        backgroundImage: "linear-gradient(135deg, #f97316, #ea580c)"
+                      }}
                     >
                       🔄 Record Again
                     </button>
                     <button
                       onClick={submitAnalysis}
                       disabled={isAnalyzing}
-                      className="px-8 py-3 bg-gradient-to-r from-sky-600 to-cyan-600 text-white font-bold rounded-xl hover:from-sky-700 hover:to-cyan-700 transition transform hover:scale-105 shadow-lg disabled:opacity-50"
+                      className="px-8 py-3 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
+                      style={{
+                        backgroundImage: isAnalyzing ? "none" : "linear-gradient(135deg, #6EA89E, #8FC6B7)",
+                        backgroundColor: isAnalyzing ? "#CFE5D5" : undefined,
+                        opacity: isAnalyzing ? 0.6 : 1
+                      }}
                     >
                       {isAnalyzing ? "⏳ Analyzing..." : "📊 Analyze Voice"}
                     </button>
@@ -410,33 +539,42 @@ function Home() {
 
         {/* SECTION 3: Analysis Results */}
         {showAnalysisSection && predictionResult && (
-          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-sky-200/50 hover:shadow-3xl transition mb-6">
-            <h2 className="text-2xl font-bold text-sky-900 mb-8">📊 Analysis Results - {patientName}</h2>
+          <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 mb-6" style={{ borderColor: "#CFE5D5" }}>
+            <h2 className="text-2xl font-bold mb-8" style={{ color: "#1F4F47" }}>📊 Analysis Results - {patientName}</h2>
 
             {/* Risk Score Card */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 text-center border border-red-200">
-                <p className="text-6xl font-bold text-red-600 mb-2">
+              <div className="rounded-xl p-6 text-center border-2" style={{
+                backgroundColor: "rgba(220, 38, 38, 0.1)",
+                borderColor: "#dc2626"
+              }}>
+                <p className="text-6xl font-bold mb-2" style={{ color: "#dc2626" }}>
                   {Math.round((predictionResult.probability_parkinsons || 0.5) * 100)}%
                 </p>
-                <p className="text-red-900 font-semibold">Risk Score</p>
+                <p style={{ color: "#dc2626", fontWeight: "600" }}>Risk Score</p>
               </div>
 
-              <div className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl p-6 text-center border border-sky-200">
-                <p className="text-xl font-bold text-sky-900 mb-4">Risk Level</p>
+              <div className="rounded-xl p-6 text-center border-2" style={{
+                backgroundColor: "rgba(166, 210, 200, 0.1)",
+                borderColor: "#A6D2C8"
+              }}>
+                <p className="text-xl font-bold mb-4" style={{ color: "#1F4F47" }}>Risk Level</p>
                 {predictionResult.risk_level && (
-                  <div className={`px-4 py-2 rounded-lg font-bold text-white ${
-                    predictionResult.probability_parkinsons > 0.7 ? "bg-red-600" :
-                    predictionResult.probability_parkinsons > 0.4 ? "bg-yellow-600" :
-                    "bg-green-600"
-                  }`}>
+                  <div className="px-4 py-2 rounded-lg font-bold text-white" style={{
+                    backgroundColor: predictionResult.probability_parkinsons > 0.7 ? "#dc2626" :
+                                     predictionResult.probability_parkinsons > 0.4 ? "#f59e0b" :
+                                     "#16a34a"
+                  }}>
                     {predictionResult.risk_level}
                   </div>
                 )}
               </div>
 
-              <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl p-6 border border-cyan-200">
-                <div className="text-sm text-gray-700 space-y-2">
+              <div className="rounded-xl p-6 border-2" style={{
+                backgroundColor: "rgba(184, 214, 178, 0.1)",
+                borderColor: "#B8D6B2"
+              }}>
+                <div className="text-sm space-y-2" style={{ color: "#1F4F47" }}>
                   <div className="flex justify-between">
                     <span className="font-semibold">Healthy:</span>
                     <span>{Math.round((predictionResult.probability_healthy || 0.5) * 100)}%</span>
@@ -454,33 +592,39 @@ function Home() {
             </div>
 
             {/* Voice Analysis Chart */}
-            <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl p-6 mb-8 border border-sky-200">
-              <h3 className="text-xl font-bold text-sky-900 mb-4">Voice Analysis Results</h3>
+            <div className="rounded-xl p-6 mb-8 border-2" style={{
+              backgroundColor: "rgba(207, 229, 213, 0.1)",
+              borderColor: "#CFE5D5"
+            }}>
+              <h3 className="text-xl font-bold mb-4" style={{ color: "#1F4F47" }}>Voice Analysis Results</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={voiceAnalysisData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
-                  <XAxis dataKey="name" stroke="#0369a1" />
-                  <YAxis stroke="#0369a1" />
-                  <Tooltip contentStyle={{ backgroundColor: "#f0f9ff", border: "1px solid #0369a1", borderRadius: "8px" }} />
-                  <Bar dataKey="value" fill="#06b6d4" radius={[8, 8, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#A6D2C8" />
+                  <XAxis dataKey="name" stroke="#6EA89E" />
+                  <YAxis stroke="#6EA89E" />
+                  <Tooltip contentStyle={{ backgroundColor: "rgba(255, 255, 255, 0.95)", border: "2px solid #A6D2C8", borderRadius: "8px" }} />
+                  <Bar dataKey="value" fill="#8FC6B7" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             {/* Feature Importance */}
-            <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl p-6 mb-8 border border-sky-200">
-              <h3 className="text-xl font-bold text-sky-900 mb-6">Feature Importance</h3>
+            <div className="rounded-xl p-6 mb-8 border-2" style={{
+              backgroundColor: "rgba(166, 210, 200, 0.1)",
+              borderColor: "#A6D2C8"
+            }}>
+              <h3 className="text-xl font-bold mb-6" style={{ color: "#1F4F47" }}>Feature Importance</h3>
               <div className="space-y-3">
                 {shapData.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-4">
-                    <div className="w-20 font-semibold text-sky-900">{item.feature}</div>
-                    <div className="flex-1 bg-gray-200 rounded-full overflow-hidden h-6">
+                    <div className="w-20 font-semibold" style={{ color: "#1F4F47" }}>{item.feature}</div>
+                    <div className="flex-1 rounded-full overflow-hidden h-6" style={{ backgroundColor: "rgba(207, 229, 213, 0.5)" }}>
                       <div 
                         className="h-full transition-all" 
                         style={{width: `${item.value}%`, backgroundColor: item.fill}}
                       ></div>
                     </div>
-                    <div className="w-12 text-right font-semibold text-sky-900">{item.value}%</div>
+                    <div className="w-12 text-right font-semibold" style={{ color: "#1F4F47" }}>{item.value}%</div>
                   </div>
                 ))}
               </div>
@@ -488,13 +632,19 @@ function Home() {
 
             {/* Extracted Features */}
             {predictionResult.features && (
-              <div className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl p-6 mb-8 border border-sky-200">
-                <h3 className="text-xl font-bold text-sky-900 mb-4">Voice Features Extracted</h3>
+              <div className="rounded-xl p-6 mb-8 border-2" style={{
+                backgroundColor: "rgba(184, 214, 178, 0.1)",
+                borderColor: "#B8D6B2"
+              }}>
+                <h3 className="text-xl font-bold mb-4" style={{ color: "#1F4F47" }}>Voice Features Extracted</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {Object.entries(predictionResult.features).slice(0, 6).map(([key, value]) => (
-                    <div key={key} className="bg-white rounded-lg p-4 border border-sky-100">
-                      <p className="text-sm text-gray-600">{key}</p>
-                      <p className="text-lg font-bold text-sky-900">{typeof value === 'number' ? value.toFixed(3) : value}</p>
+                    <div key={key} className="rounded-lg p-4 border-2" style={{
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
+                      borderColor: "#CFE5D5"
+                    }}>
+                      <p className="text-sm" style={{ color: "#6EA89E" }}>{key}</p>
+                      <p className="text-lg font-bold" style={{ color: "#1F4F47" }}>{typeof value === 'number' ? value.toFixed(3) : value}</p>
                     </div>
                   ))}
                 </div>
@@ -505,13 +655,23 @@ function Home() {
             <div className="flex gap-4 flex-wrap">
               <button
                 onClick={recordAgain}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-orange-700 transition transform hover:scale-105 shadow-lg"
+                className="flex-1 px-6 py-3 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
+                style={{
+                  backgroundImage: "linear-gradient(135deg, #f97316, #ea580c)"
+                }}
               >
                 🔄 Record Another Voice
               </button>
               <button
-                onClick={() => navigate('/result', { state: { prediction: predictionResult, patientInfo: { name: patientName, age: patientAge, dob: patientDOB, medicalHistory: patientMedicalHistory } } })}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-sky-600 to-cyan-600 text-white font-bold rounded-xl hover:from-sky-700 hover:to-cyan-700 transition transform hover:scale-105 shadow-lg"
+                onClick={() => navigate('/result', { state: { 
+                  ...predictionResult,
+                  risk_score: Math.round((predictionResult.probability_parkinsons || 0.5) * 100),
+                  patientInfo: { name: patientName, age: patientAge, dateOfBirth: patientDOB, medicalHistory: patientMedicalHistory } 
+                }})}
+                className="flex-1 px-6 py-3 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
+                style={{
+                  backgroundImage: "linear-gradient(135deg, #6EA89E, #8FC6B7)"
+                }}
               >
                 📊 View Detailed Report
               </button>
