@@ -47,15 +47,40 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if "audio" not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
+    try:
+        if "audio" not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
 
-    file = request.files["audio"]
-    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(filepath)
+        file = request.files["audio"]
+        
+        if file.filename == "":
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Validate file extension
+        allowed_extensions = {'wav', 'mp3', 'webm', 'ogg', 'm4a', 'aac', 'flac'}
+        if not any(file.filename.lower().endswith(ext) for ext in allowed_extensions):
+            return jsonify({"error": "Invalid audio format. Allowed: wav, mp3, webm, ogg, m4a, aac, flac"}), 400
+        
+        filepath = os.path.join(UPLOAD_FOLDER, f"{datetime.now().timestamp()}_{file.filename}")
+        file.save(filepath)
 
-    result = predict_audio(filepath)
-    return jsonify(result)
+        if not os.path.exists(filepath):
+            return jsonify({"error": "Failed to save audio file"}), 400
+
+        result = predict_audio(filepath)
+        
+        # Check if prediction had an error
+        if "error" in result:
+            # Clean up the file
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            return jsonify(result), 400
+        
+        return jsonify(result), 200
+    
+    except Exception as e:
+        print(f"Error in /predict endpoint: {str(e)}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 # ===== PATIENT MANAGEMENT =====
 @app.route("/patients", methods=["GET"])

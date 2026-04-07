@@ -11,8 +11,18 @@ export const predictAudio = async (audioBlob, patientInfo = {}) => {
   try {
     const formData = new FormData();
     
+    // Determine file extension based on MIME type
+    let filename = "voice_recording.wav";
+    if (audioBlob.type === "audio/webm") {
+      filename = "voice_recording.webm";
+    } else if (audioBlob.type === "audio/ogg") {
+      filename = "voice_recording.ogg";
+    } else if (audioBlob.type === "audio/mp4") {
+      filename = "voice_recording.m4a";
+    }
+    
     // Add audio file
-    formData.append("audio", audioBlob, "voice_recording.wav");
+    formData.append("audio", audioBlob, filename);
     
     // Add patient info if provided
     if (patientInfo.name) formData.append("patient_name", patientInfo.name);

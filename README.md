@@ -1,70 +1,317 @@
-# Getting Started with Create React App
+# NeuroVoice: Parkinson's Disease Detection System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🏥 Project Overview
 
-## Available Scripts
+**NeuroVoice** is a complete web-based system for Parkinson's disease screening using voice analysis. It combines a modern React frontend with a Python-based ML backend to provide real-time audio analysis and risk assessment.
 
-In the project directory, you can run:
+### ✨ Key Features
+- **Real-time Voice Recording**: Record voice samples directly from the web interface
+- **AI-Powered Analysis**: ML model extracts 22 vocal features and predicts Parkinson's risk
+- **Instant Results**: Get risk scores, detailed vocal metrics, and clinical interpretation
+- **Model Training**: Complete Jupyter notebook for training custom models
+- **Batch Processing**: Analyze multiple audio files at once
+- **Model Management**: Upload, delete, and monitor ML models via API
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 📁 Project Structure
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```
+NeuroVoice-Parkinsons-Screening/
+├── neurovoice-backend/           # Flask ML backend
+│   ├── app_ml.py                # Main Flask application
+│   ├── config.py                # Configuration
+│   ├── requirements.txt          # Python dependencies
+│   ├── services/
+│   │   ├── predict_service_ml.py # Feature extraction & predictions
+│   │   └── __pycache__/
+│   ├── models/                  # ML model files (generated/trained)
+│   │   ├── parkinsons_model.pkl
+│   │   ├── parkinsons_scaler.pkl
+│   │   └── parkinsons_features.json
+│   ├── uploads/                 # Uploaded audio files
+│   └── reports/                 # Prediction reports
+│
+├── neurovoice-frontend/          # React.js frontend
+│   ├── package.json             # Node.js dependencies
+│   ├── public/
+│   │   └── index.html           # Main HTML
+│   └── src/
+│       ├── App.js               # Main React component
+│       ├── index.js             # Entry point
+│       ├── pages/               # Page components
+│       │   ├── Home.js          # Home page
+│       │   ├── Upload.js        # Audio upload/recording
+│       │   ├── Result.js        # Results display
+│       │   ├── History.js       # Prediction history
+│       │   └── ...
+│       └── services/
+│           └── api.js           # API calls
+│
+├── COLAB_MODEL_TRAINING.ipynb    # Model training notebook (Jupyter)
+├── README.md                     # This file
+└── package.json                  # Root package config
+```
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🚀 Quick Start (5 Minutes)
 
-### `npm run build`
+### Prerequisites
+- **Python 3.8+** with pip
+- **Node.js 14+** with npm
+- **Virtual Environment** (recommended)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 1️⃣ Backend Setup
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+# Navigate to backend directory
+cd neurovoice-backend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# Create virtual environment
+python -m venv venv
 
-### `npm run eject`
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On Mac/Linux:
+source venv/bin/activate
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# Install Python dependencies
+pip install -r requirements.txt
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Run the backend server
+python app_ml.py
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Backend will start on: **http://localhost:5000**
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+✓ You should see:
+```
+ * Running on http://127.0.0.1:5000
+ * Restarting with reloader
+```
 
-## Learn More
+### 2️⃣ Frontend Setup (New Terminal)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+# Navigate to frontend directory
+cd neurovoice-frontend
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Install Node.js dependencies
+npm install
 
-### Code Splitting
+# Start React development server
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Frontend will open at: **http://localhost:3000**
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 📊 Using the Application
 
-### Making a Progressive Web App
+### Recording & Analysis
+1. **Open Frontend**: Go to http://localhost:3000
+2. **Navigate to Upload Page**: Click "Voice Recording" 
+3. **Record Audio**: 
+   - Click "Start Recording"
+   - Speak for 5-20 seconds
+   - Click "Stop Recording"
+4. **Analyze**: Click "Analyze Audio"
+5. **View Results**: See risk score, vocal features, and interpretation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Batch Processing
+```bash
+curl -X POST http://localhost:5000/predict/batch \
+  -F "files=@audio1.wav" \
+  -F "files=@audio2.wav"
+```
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🧠 ML Model Training
 
-### Deployment
+Use the provided **COLAB_MODEL_TRAINING.ipynb** notebook to:
+1. Train a new model with your own dataset
+2. Extract 22 vocal features automatically
+3. Evaluate model performance
+4. Export trained models in the correct format
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Steps:
+1. Open `COLAB_MODEL_TRAINING.ipynb` in Google Colab or Jupyter
+2. Run all cells in order
+3. Download the 3 generated files:
+   - `parkinsons_model.pkl`
+   - `parkinsons_scaler.pkl`
+   - `parkinsons_features.json`
+4. Copy to `neurovoice-backend/models/`
+5. Restart backend server
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 🔌 API Endpoints
+
+### Health Check
+```bash
+GET /
+GET /health
+```
+
+### Predictions
+```bash
+# Single audio prediction
+POST /predict
+Content-Type: multipart/form-data
+Body: audio file
+
+# Batch predictions
+POST /predict/batch
+Content-Type: multipart/form-data
+Body: multiple audio files
+```
+
+### Model Management
+```bash
+# Get model status
+GET /model/status
+
+# Get model details
+GET /model/info
+
+# Upload new model
+POST /model/upload
+Content-Type: multipart/form-data
+Body: model files
+
+# Delete current model
+DELETE /model/delete
+```
+
+---
+
+## 📈 Features Extracted
+
+The system extracts 22 vocal features:
+
+### MFCC Features (1-13)
+- Mel-Frequency Cepstral Coefficients
+
+### Pitch & Modulation (14-16)
+- **F0**: Fundamental Frequency
+- **Jitter**: Pitch variation
+- **Shimmer**: Amplitude variation
+
+### Voice Quality (17-22)
+- **NHR**: Noise-to-Harmonics Ratio
+- **HNR**: Harmonics-to-Noise Ratio
+- **RPDE**: Recurrence Period Density Entropy
+- **DFA**: Detrended Fluctuation Analysis
+- **PPE**: Pitch Period Entropy
+- **ZCR**: Zero Crossing Rate
+
+---
+
+## 🔧 Configuration
+
+### Backend Configuration
+```python
+UPLOAD_FOLDER = "uploads"
+MODELS_FOLDER = "models"
+MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB max file
+ALLOWED_AUDIO_EXTENSIONS = {'wav', 'mp3', 'ogg', 'flac', 'wma'}
+```
+
+### Frontend Configuration
+```javascript
+const API_BASE_URL = 'http://127.0.0.1:5000';
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Backend Won't Start
+```bash
+# Check if port 5000 is in use
+netstat -ano | findstr :5000
+
+# Kill process on Windows
+taskkill /PID <PID> /F
+
+# Install missing dependencies
+pip install -r requirements.txt --upgrade
+```
+
+### Frontend Errors
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Reinstall dependencies
+rm -rf node_modules
+npm install
+
+# Check Node version
+node --version  # Should be 14+
+```
+
+### No Model Loaded
+1. Check `neurovoice-backend/models/` contains all 3 files
+2. Restart backend: `python app_ml.py`
+3. Test with: `GET http://localhost:5000/health`
+
+### Audio Not Recording
+- Check microphone permissions in browser
+- Clear browser cache and reload
+- Try Chrome (recommended browser)
+
+---
+
+## 📝 Supported Audio Formats
+
+- **WAV** (recommended)
+- **MP3**
+- **OGG**
+- **FLAC**
+- **WMA**
+
+**Recommended**: 5-30 seconds, Mono or Stereo, 16-48kHz
+
+---
+
+## 🆚 Risk Level Interpretation
+
+| Risk Score | Level | Interpretation |
+|-----------|-------|-----------------|
+| 0-30% | Low | Low risk of Parkinson's disease |
+| 31-70% | Moderate | Moderate risk - Consult specialist |
+| 71-100% | High | High risk - Immediate consultation recommended |
+
+**⚠️ Medical Disclaimer**: This system is a screening tool only and should NOT replace professional medical diagnosis. Always consult healthcare professionals.
+
+---
+
+## ✅ Checklist Before Using
+
+- [ ] Backend server running on http://localhost:5000
+- [ ] Frontend server running on http://localhost:3000
+- [ ] Model files in `neurovoice-backend/models/`
+- [ ] Microphone permissions granted
+- [ ] Test recording works
+- [ ] Check `/health` endpoint
+
+---
+
+## 🎯 Next Steps
+
+1. **Start Backend**: `cd neurovoice-backend && python app_ml.py`
+2. **Start Frontend**: `cd neurovoice-frontend && npm start`
+3. **Test System**: Record a voice sample
+4. **Train Custom Model**: Run `COLAB_MODEL_TRAINING.ipynb`
+5. **Deploy**: Use Gunicorn for production
+
+---
+
+**Version**: 2.0.0  
+**Status**: ✅ Full Integration Complete

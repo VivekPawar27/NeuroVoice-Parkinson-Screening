@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import warnings
+from scipy.io import wavfile
 warnings.filterwarnings('ignore')
 
 # Global model variables
@@ -119,7 +120,11 @@ def extract_oxford_features(y, sr):
         else:
             features_dict['PPE'] = 0.0
         
-        # Status (target variable, not used for prediction) - feature 22
+        # ZCR (Zero Crossing Rate) - feature 22
+        zcr = librosa.feature.zero_crossing_rate(y)[0]
+        features_dict['ZCR'] = float(np.mean(zcr))
+        
+        # Status (target variable, not used for prediction) - feature 23
         features_dict['Status'] = 0.0
         
         return features_dict
@@ -213,8 +218,55 @@ def predict_audio(filepath):
         Dictionary with prediction results
     """
     try:
+        # Check if file exists
+        if not os.path.exists(filepath):
+            return {
+                "error": "Audio file not found",
+                "risk_score": 0,
+                "risk_level": "Invalid",
+            }
+        
         # Load audio file
-        y, sr = librosa.load(filepath, sr=None, mono=True)
+        y = None
+        sr = None
+        
+        # Try loading with librosa first (supports WAV, MP3, and more)
+        try:
+            y, sr = librosa.load(filepath, sr=None, mono=True)
+        except Exception as librosa_error:
+            # Fallback: try scipy for WAV files
+            file_ext = os.path.splitext(filepath)[1].lower()
+            
+            if file_ext == '.wav':
+                try:
+                    sr, y_int = wavfile.read(filepath)
+                    # Convert to float and normalize
+                    y = y_int.astype(np.float32)
+                    if y.ndim > 1:  # If stereo, convert to mono
+                        y = np.mean(y, axis=1)
+                    y = y / np.max(np.abs(y))
+                except Exception as scipy_error:
+                    print(f"Error loading audio with scipy: {str(scipy_error)}")
+                    return {
+                        "error": "Failed to load WAV file. The file may be corrupted.",
+                        "risk_score": 0,
+                        "risk_level": "Invalid",
+                    }
+            else:
+                print(f"Librosa failed to load {file_ext} file: {str(librosa_error)}")
+                return {
+                    "error": f"Unsupported audio format: {file_ext}. Please use WAV or MP3 format.",
+                    "risk_score": 0,
+                    "risk_level": "Invalid",
+                }
+        
+        # Check if audio was loaded
+        if y is None or sr is None:
+            return {
+                "error": "Failed to load audio file. Unable to process the audio.",
+                "risk_score": 0,
+                "risk_level": "Invalid",
+            }
         
         # Ensure minimum audio length
         if len(y) < sr:
@@ -295,13 +347,16 @@ def predict_audio(filepath):
                 "rpde": round(features_dict.get('RPDE', 0), 4),
                 "dfa": round(features_dict.get('DFA', 0), 4),
                 "ppe": round(features_dict.get('PPE', 0), 4),
+                "zcr": round(features_dict.get('ZCR', 0), 4),
                 "f0": round(features_dict.get('F0', 0), 2)
             },
             "all_features": features_dict
         }
         
     except Exception as e:
-        print(f"Error in predict_audio: {e}")
+        print(f"Error in predict_audio: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             "error": f"Prediction failed: {str(e)}",
             "risk_score": 0,
