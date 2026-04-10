@@ -102,20 +102,17 @@ function Home() {
       timerIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => {
           const newTime = prev + 1;
-          
-          // At 15 seconds: hide warning message and enable stop button
+          // At 15 seconds: auto-stop
           if (newTime >= 15) {
-            setCanStopRecording(true);
-            setShowMinimumWarning(false);
-          }
-          
-          // At 30 seconds: auto-stop recording
-          if (newTime >= 30) {
-            mediaRecorder.current.stop();
+            if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
+              mediaRecorder.current.stop();
+            }
             setIsRecording(false);
+            setCanStopRecording(false);
+            setShowMinimumWarning(false);
             clearInterval(timerIntervalRef.current);
+            return 15;
           }
-          
           return newTime;
         });
       }, 1000);
@@ -126,20 +123,15 @@ function Home() {
   };
 
   const stopRecording = () => {
-    if (recordingTime < 15) {
-      setFormError("Recording must be at least 15 seconds long.");
-      return;
-    }
-    
-    if (mediaRecorder.current) {
+    if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
       mediaRecorder.current.stop();
-      setIsRecording(false);
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-      setCanStopRecording(false);
-      setShowMinimumWarning(false);
     }
+    setIsRecording(false);
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    setCanStopRecording(false);
+    setShowMinimumWarning(false);
   };
 
   const submitAnalysis = async () => {
@@ -389,7 +381,7 @@ function Home() {
                 borderColor: "#8FC6B7"
               }}>
                 <p className="text-3xl mb-2">⏱️</p>
-                <p className="text-sm font-semibold" style={{ color: "#1F4F47" }}>Duration: 15-30 sec</p>
+                <p className="text-sm font-semibold" style={{ color: "#1F4F47" }}>Duration: 15 sec</p>
               </div>
               <div className="rounded-xl p-4 text-center border-2" style={{
                 backgroundColor: "rgba(110, 168, 158, 0.2)",
@@ -405,7 +397,7 @@ function Home() {
               borderColor: "#6EA89E",
               color: "#1F4F47"
             }}>
-              <p className="font-semibold">⏱️ Duration: MINIMUM 15 seconds - MAXIMUM 30 seconds</p>
+              <p className="font-semibold">⏱️ Duration: 15 seconds — recording auto-stops</p>
             </div>
 
             <div className="flex flex-col items-center">
@@ -549,7 +541,9 @@ function Home() {
                 borderColor: "#dc2626"
               }}>
                 <p className="text-6xl font-bold mb-2" style={{ color: "#dc2626" }}>
-                  {Math.round((predictionResult.probability_parkinsons || 0.5) * 100)}%
+                  {predictionResult.risk_score != null
+                    ? predictionResult.risk_score.toFixed(1)
+                    : Math.round((predictionResult.probability_parkinsons ?? 0) * 100)}%
                 </p>
                 <p style={{ color: "#dc2626", fontWeight: "600" }}>Risk Score</p>
               </div>
@@ -561,8 +555,8 @@ function Home() {
                 <p className="text-xl font-bold mb-4" style={{ color: "#1F4F47" }}>Risk Level</p>
                 {predictionResult.risk_level && (
                   <div className="px-4 py-2 rounded-lg font-bold text-white" style={{
-                    backgroundColor: predictionResult.probability_parkinsons > 0.7 ? "#dc2626" :
-                                     predictionResult.probability_parkinsons > 0.4 ? "#f59e0b" :
+                    backgroundColor: (predictionResult.risk_score ?? 0) >= 60 ? "#dc2626" :
+                                     (predictionResult.risk_score ?? 0) >= 30 ? "#f59e0b" :
                                      "#16a34a"
                   }}>
                     {predictionResult.risk_level}
@@ -576,16 +570,16 @@ function Home() {
               }}>
                 <div className="text-sm space-y-2" style={{ color: "#1F4F47" }}>
                   <div className="flex justify-between">
-                    <span className="font-semibold">Healthy:</span>
-                    <span>{Math.round((predictionResult.probability_healthy || 0.5) * 100)}%</span>
+                    <span className="font-semibold">Status:</span>
+                    <span>{predictionResult.status ?? "—"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-semibold">Parkinson's:</span>
-                    <span>{Math.round((predictionResult.probability_parkinsons || 0.5) * 100)}%</span>
+                    <span className="font-semibold">Confidence:</span>
+                    <span>{predictionResult.confidence != null ? (predictionResult.confidence * 100).toFixed(1) + "%" : "—"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-semibold">Duration:</span>
-                    <span>{formatTime(recordingTime)}</span>
+                    <span className="font-semibold">Segments:</span>
+                    <span>{predictionResult.segments_analyzed ?? "—"}</span>
                   </div>
                 </div>
               </div>
@@ -663,11 +657,7 @@ function Home() {
                 🔄 Record Another Voice
               </button>
               <button
-                onClick={() => navigate('/result', { state: { 
-                  ...predictionResult,
-                  risk_score: Math.round((predictionResult.probability_parkinsons || 0.5) * 100),
-                  patientInfo: { name: patientName, age: patientAge, dateOfBirth: patientDOB, medicalHistory: patientMedicalHistory } 
-                }})}
+                onClick={() => navigate('/result', { state: predictionResult })}
                 className="flex-1 px-6 py-3 text-white font-bold rounded-xl transition transform hover:scale-105 shadow-lg"
                 style={{
                   backgroundImage: "linear-gradient(135deg, #6EA89E, #8FC6B7)"

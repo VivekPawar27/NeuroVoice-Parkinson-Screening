@@ -8,313 +8,236 @@ import {
 
 function History() {
   const navigate = useNavigate();
-  const [patients, setPatients] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [patientDetails, setPatientDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [sessionHistory, setSessionHistory] = useState([]);
+  const [selected, setSelected] = useState(null);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
+  // Load session history from sessionStorage on mount
   useEffect(() => {
-    fetchPatients();
+    try {
+      const raw = sessionStorage.getItem("neurovoice_history");
+      const parsed = raw ? JSON.parse(raw) : [];
+      setSessionHistory(parsed);
+      if (parsed.length > 0) setSelected(parsed[0]);
+    } catch (e) {
+      setSessionHistory([]);
+    }
   }, []);
 
-  const fetchPatients = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/patients`);
-      const data = await response.json();
-      setPatients(data.patients || []);
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-    } finally {
-      setLoading(false);
-    }
+  const clearHistory = () => {
+    sessionStorage.removeItem("neurovoice_history");
+    setSessionHistory([]);
+    setSelected(null);
   };
 
-  const fetchPatientHistory = async (patientName) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/patients/${encodeURIComponent(patientName)}`);
-      const data = await response.json();
-      setPatientDetails(data);
-      setSelectedPatient(patientName);
-    } catch (error) {
-      console.error("Error fetching patient history:", error);
-      alert("Could not load patient history");
-    }
-  };
+  const riskColor = (score) =>
+    score >= 60 ? "#ef4444" : score >= 30 ? "#f59e0b" : "#10b981";
 
-  const downloadPatientReport = () => {
-    if (!patientDetails) return;
+  const riskBg = (score) =>
+    score >= 60 ? "bg-red-50 border-red-300" : score >= 30 ? "bg-yellow-50 border-yellow-300" : "bg-green-50 border-green-300";
 
-    const records = patientDetails.records || [];
-    let reportContent = `NeuroVoice Patient History Report
-====================================
-Generated: ${new Date().toLocaleString()}
+  const trendData = sessionHistory.map((r, i) => ({
+    test: `Test ${sessionHistory.length - i}`,
+    "Risk Score": parseFloat((r.risk_score ?? 0).toFixed(1)),
+    "PD Probability": parseFloat(((r.aggregate_stats?.mean_probability ?? 0) * 100).toFixed(1)),
+  })).reverse();
 
-PATIENT DETAILS:
-Name: ${patientDetails.name}
-Age: ${patientDetails.age || "N/A"}
-Date of Birth: ${patientDetails.dob || "N/A"}
-Medical History: ${patientDetails.medical_history || "None"}
+  const segData = selected?.segment_predictions?.map(s => ({
+    name: `Seg ${s.segment}`,
+    "PD %": parseFloat((s.probability_parkinsons * 100).toFixed(1)),
+    "Healthy %": parseFloat(((1 - s.probability_parkinsons) * 100).toFixed(1)),
+  })) ?? [];
 
-SCREENING RECORDS (${records.length} total):
-`;
-
-    records.forEach((record, idx) => {
-      reportContent += `
-Record ${idx + 1}:
-  Date: ${new Date(record.timestamp).toLocaleString()}
-  Risk Score: ${record.risk_score}%
-  Risk Level: ${record.risk_level}
-  Healthy Probability: ${Math.round(record.probability_healthy * 100)}%
-  Parkinson's Probability: ${Math.round(record.probability_parkinsons * 100)}%
-`;
-    });
-
-    reportContent += `
-DISCLAIMER:
-This is for informational purposes only. Not a medical diagnosis.
-Consult a healthcare professional for proper evaluation.
-    `;
-
-    const element = document.createElement("a");
-    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(reportContent));
-    element.setAttribute("download", `${patientDetails.name}_History_${new Date().getTime()}.txt`);
-    element.style.display = "none";
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const riskTrendData = patientDetails?.records?.map((record, idx) => ({
-    date: new Date(record.timestamp).toLocaleDateString(),
-    risk: record.risk_score,
-    parkinson: Math.round(record.probability_parkinsons * 100)
-  })) || [];
+  const vf = selected?.vocal_features ?? {};
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        backgroundImage: "radial-gradient(circle at 10% 30%, rgba(207, 229, 213, 0.5), transparent), radial-gradient(circle at 90% 70%, rgba(166, 210, 200, 0.4), transparent), radial-gradient(circle at 50% 100%, rgba(184, 214, 178, 0.3), transparent), linear-gradient(135deg, #f9fefb 0%, #CFE5D5 35%, #A6D2C8 70%, #CFE5D5 100%)"
-      }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Header />
-      
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold mb-2" style={{
-            backgroundImage: "linear-gradient(135deg, #1F4F47 0%, #2D5A4F 50%, #3A6B63 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text"
-          }}>
-            📋 Patient History
-          </h1>
-          <p style={{ color: "#1F4F47", fontSize: "16px", fontWeight: "500" }}>
-            View and manage all patient screening records
-          </p>
+
+        {/* Page header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-black text-gray-800">📋 Session History</h1>
+            <p className="text-gray-400 text-sm mt-1">
+              {sessionHistory.length} test{sessionHistory.length !== 1 ? "s" : ""} recorded this session · clears on page refresh
+            </p>
+          </div>
+          <div className="flex gap-3">
+            {sessionHistory.length > 0 && (
+              <button onClick={clearHistory}
+                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-xl transition text-sm">
+                🗑️ Clear History
+              </button>
+            )}
+            <button onClick={() => navigate("/upload")}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition text-sm">
+              + New Analysis
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Patients List */}
-          <div className="lg:col-span-1">
-            <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 shadow-lg border-2 sticky top-8" style={{ borderColor: "#CFE5D5" }}>
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3" style={{ color: "#1F4F47" }}>
-                <span className="p-2 rounded-lg" style={{ backgroundColor: "rgba(207, 229, 213, 0.5)" }}>👥</span> 
-                Patients ({patients.length})
-              </h2>
+        {sessionHistory.length === 0 ? (
+          <div className="bg-white rounded-2xl p-16 text-center shadow border border-gray-100">
+            <div className="text-6xl mb-4">📭</div>
+            <p className="text-gray-500 text-lg font-semibold mb-2">No tests recorded yet</p>
+            <p className="text-gray-400 text-sm mb-6">Run a voice analysis to see results here</p>
+            <button onClick={() => navigate("/upload")}
+              className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition">
+              Start Analysis
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              {loading ? (
-                <div style={{ color: "#6EA89E", textAlign: "center" }}>Loading patients...</div>
-              ) : patients.length === 0 ? (
-                <div style={{ color: "#6EA89E", textAlign: "center" }}>
-                  <p className="mb-4">No patient records found</p>
-                  <button
-                    onClick={() => navigate("/")}
-                    className="px-4 py-2 text-white font-bold rounded-lg transition"
-                    style={{
-                      backgroundImage: "linear-gradient(135deg, #6EA89E, #8FC6B7)"
-                    }}
-                  >
-                    Create New Screening
-                  </button>
+            {/* ── LEFT: Test list ── */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+                <div className="p-4 border-b border-gray-100 bg-gray-50">
+                  <p className="font-bold text-gray-700">All Tests ({sessionHistory.length})</p>
                 </div>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {patients.map((patient) => (
-                    <button
-                      key={patient.name}
-                      onClick={() => fetchPatientHistory(patient.name)}
-                      className="w-full text-left p-4 rounded-lg transition border-2"
-                      style={{
-                        backgroundColor: selectedPatient === patient.name ? "rgba(166, 210, 200, 0.2)" : "rgba(207, 229, 213, 0.2)",
-                        borderColor: selectedPatient === patient.name ? "#A6D2C8" : "#CFE5D5",
-                        color: "#1F4F47"
-                      }}
-                    >
-                      <p className="font-bold">{patient.name}</p>
-                      <p className="text-xs mt-1" style={{ color: "#6EA89E" }}>Records: {patient.records?.length || 0}</p>
-                      {patient.last_updated && (
-                        <p className="text-xs mt-1" style={{ color: "#6EA89E" }}>
-                          {new Date(patient.last_updated).toLocaleDateString()}
-                        </p>
-                      )}
+                <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                  {sessionHistory.map((r, i) => (
+                    <button key={r._id} onClick={() => setSelected(r)}
+                      className={`w-full text-left p-4 hover:bg-blue-50 transition ${selected?._id === r._id ? "bg-blue-50 border-l-4 border-blue-500" : ""}`}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-bold text-gray-800 text-sm">
+                            {r.patientInfo?.name || r.patient_name || `Test ${sessionHistory.length - i}`}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {new Date(r._timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                        <span className="text-lg font-black" style={{ color: riskColor(r.risk_score ?? 0) }}>
+                          {(r.risk_score ?? 0).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="mt-2 flex gap-2 items-center">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${riskBg(r.risk_score ?? 0)}`}>
+                          {r.risk_level ?? "—"}
+                        </span>
+                        <span className="text-xs text-gray-400">{r.segments_analyzed ?? 0} segs</span>
+                      </div>
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* ── RIGHT: Selected test detail ── */}
+            <div className="lg:col-span-2 space-y-6">
+              {selected && (
+                <>
+                  {/* Summary cards */}
+                  <div className={`rounded-2xl p-6 border-2 ${riskBg(selected.risk_score ?? 0)}`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h2 className="text-xl font-black text-gray-800">
+                          {selected.patientInfo?.name || selected.patient_name || "Analysis Result"}
+                        </h2>
+                        <p className="text-gray-400 text-xs">{new Date(selected._timestamp).toLocaleString()}</p>
+                      </div>
+                      <button onClick={() => navigate("/result", { state: selected })}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition">
+                        View Full Report →
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { label: "Risk Score",  val: `${(selected.risk_score ?? 0).toFixed(1)}%`, color: "text-red-600" },
+                        { label: "Risk Level",  val: selected.risk_level ?? "—",                  color: "text-orange-600" },
+                        { label: "Confidence",  val: `${((selected.confidence ?? 0)*100).toFixed(1)}%`, color: "text-blue-600" },
+                        { label: "Duration",    val: `${(selected.audio_duration ?? 0).toFixed(1)}s`,   color: "text-gray-700" },
+                      ].map((c, i) => (
+                        <div key={i} className="bg-white rounded-xl p-3 text-center shadow-sm">
+                          <p className="text-xs text-gray-400 mb-1">{c.label}</p>
+                          <p className={`text-lg font-black ${c.color}`}>{c.val}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Gauge */}
+                    <div className="mt-4">
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div className="h-full rounded-full transition-all"
+                          style={{ width: `${Math.min(100, selected.risk_score ?? 0)}%`, backgroundColor: riskColor(selected.risk_score ?? 0) }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Patient info */}
+                  {(selected.patientInfo?.name || selected.patient_name) && (
+                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                      <h3 className="font-bold text-gray-700 mb-3">👤 Patient Details</h3>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {[
+                          ["Name",     selected.patientInfo?.name || selected.patient_name],
+                          ["Age",      selected.patientInfo?.age  || selected.patient_age || "—"],
+                          ["DOB",      selected.patientInfo?.dateOfBirth || selected.patient_dob || "—"],
+                          ["History",  selected.patientInfo?.medicalHistory || selected.patient_history || "—"],
+                        ].map(([l, v]) => (
+                          <div key={l} className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-xs text-gray-400">{l}</p>
+                            <p className="font-semibold text-gray-800">{v}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Segment chart */}
+                  {segData.length > 0 && (
+                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                      <h3 className="font-bold text-gray-700 mb-3">Segment Analysis</h3>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={segData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+                          <Tooltip formatter={v => `${v}%`} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar dataKey="PD %" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="Healthy %" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Vocal features */}
+                  {Object.keys(vf).length > 0 && (
+                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                      <h3 className="font-bold text-gray-700 mb-3">Vocal Features</h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {Object.entries(vf).map(([k, v]) => (
+                          <div key={k} className="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
+                            <span className="text-xs font-semibold text-gray-400 uppercase">{k}</span>
+                            <span className="text-sm font-bold text-blue-700">{typeof v === "number" ? v.toFixed(4) : v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Risk trend across all tests */}
+                  {trendData.length > 1 && (
+                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                      <h3 className="font-bold text-gray-700 mb-3">Risk Score Trend (All Tests)</h3>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={trendData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis dataKey="test" tick={{ fontSize: 11 }} />
+                          <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+                          <Tooltip formatter={v => `${v}%`} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Line type="monotone" dataKey="Risk Score" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
-
-          {/* Patient Details */}
-          <div className="lg:col-span-2">
-            {selectedPatient ? (
-              <div className="space-y-6">
-                {/* Patient Info */}
-                <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-lg border-2" style={{ borderColor: "#CFE5D5" }}>
-                  <h3 className="text-2xl font-bold mb-6" style={{ color: "#1F4F47" }}>📝 Patient Details</h3>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="p-4 rounded-lg border-2" style={{
-                      backgroundColor: "rgba(207, 229, 213, 0.3)",
-                      borderColor: "#CFE5D5",
-                      color: "#1F4F47"
-                    }}>
-                      <p className="text-sm font-bold" style={{ color: "#6EA89E" }}>Name</p>
-                      <p className="font-bold">{patientDetails?.name}</p>
-                    </div>
-                    <div className="p-4 rounded-lg border-2" style={{
-                      backgroundColor: "rgba(207, 229, 213, 0.3)",
-                      borderColor: "#CFE5D5",
-                      color: "#1F4F47"
-                    }}>
-                      <p className="text-sm font-bold" style={{ color: "#6EA89E" }}>Age</p>
-                      <p className="font-bold">{patientDetails?.age || "N/A"}</p>
-                    </div>
-                    <div className="p-4 rounded-lg border-2" style={{
-                      backgroundColor: "rgba(207, 229, 213, 0.3)",
-                      borderColor: "#CFE5D5",
-                      color: "#1F4F47"
-                    }}>
-                      <p className="text-sm font-bold" style={{ color: "#6EA89E" }}>DOB</p>
-                      <p className="font-bold">{patientDetails?.dob || "N/A"}</p>
-                    </div>
-                    <div className="p-4 rounded-lg border-2" style={{
-                      backgroundColor: "rgba(207, 229, 213, 0.3)",
-                      borderColor: "#CFE5D5",
-                      color: "#1F4F47"
-                    }}>
-                      <p className="text-sm font-bold" style={{ color: "#6EA89E" }}>Records</p>
-                      <p className="font-bold">{patientDetails?.records?.length || 0}</p>
-                    </div>
-                  </div>
-                  {patientDetails?.medical_history && (
-                    <div className="border-2 rounded-lg p-4" style={{
-                      backgroundColor: "rgba(184, 214, 178, 0.2)",
-                      borderColor: "#B8D6B2",
-                      color: "#1F4F47"
-                    }}>
-                      <p className="text-sm"><span className="font-bold">Medical History:</span> {patientDetails.medical_history}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Risk Trend Chart */}
-                {riskTrendData.length > 0 && (
-                  <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-lg border-2" style={{ borderColor: "#CFE5D5" }}>
-                    <h3 className="text-2xl font-bold mb-6 flex items-center gap-3" style={{ color: "#1F4F47" }}>
-                      <span className="p-2 rounded-lg" style={{ backgroundColor: "rgba(207, 229, 213, 0.5)" }}>📈</span> 
-                      Risk Trend
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={riskTrendData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#A6D2C8" />
-                        <XAxis dataKey="date" stroke="#6EA89E" />
-                        <YAxis stroke="#6EA89E" />
-                        <Tooltip contentStyle={{ backgroundColor: "rgba(255, 255, 255, 0.95)", border: "2px solid #A6D2C8", borderRadius: "12px" }} />
-                        <Legend />
-                        <Line type="monotone" dataKey="risk" stroke="#6EA89E" strokeWidth={2} dot={{ fill: "#8FC6B7" }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-
-                {/* Screening Records */}
-                <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-lg border-2" style={{ borderColor: "#CFE5D5" }}>
-                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-3" style={{ color: "#1F4F47" }}>
-                    <span className="p-2 rounded-lg" style={{ backgroundColor: "rgba(207, 229, 213, 0.5)" }}>📋</span> 
-                    Screening Records
-                  </h3>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {patientDetails?.records?.map((record, idx) => (
-                      <div key={idx} className="p-4 rounded-lg border-2 hover:shadow-md transition" style={{
-                        backgroundColor: "rgba(166, 210, 200, 0.1)",
-                        borderColor: "#CFE5D5"
-                      }}>
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-bold" style={{ color: "#1F4F47" }}>Screening #{idx + 1}</h4>
-                          <span className="text-sm" style={{ color: "#6EA89E" }}>{new Date(record.timestamp).toLocaleString()}</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <p className="font-semibold" style={{ color: "#6EA89E" }}>Risk Score:</p>
-                            <p className="font-bold text-lg" style={{ color: "#6EA89E" }}>{record.risk_score}%</p>
-                          </div>
-                          <div>
-                            <p className="font-semibold" style={{ color: "#6EA89E" }}>Risk Level:</p>
-                            <p className="font-bold" style={{
-                              color: record.risk_score > 70 ? "#dc2626" :
-                                     record.risk_score > 40 ? "#f59e0b" :
-                                     "#16a34a"
-                            }}>{record.risk_level}</p>
-                          </div>
-                          <div>
-                            <p className="font-semibold" style={{ color: "#6EA89E" }}>Healthy:</p>
-                            <p className="font-bold" style={{ color: "#16a34a" }}>{Math.round(record.probability_healthy * 100)}%</p>
-                          </div>
-                          <div>
-                            <p className="font-semibold" style={{ color: "#6EA89E" }}>Parkinson's:</p>
-                            <p className="font-bold" style={{ color: "#dc2626" }}>{Math.round(record.probability_parkinsons * 100)}%</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => navigate("/")}
-                    className="flex-1 px-6 py-3 font-bold rounded-xl transition border-2"
-                    style={{
-                      backgroundColor: "#F5F5F5",
-                      color: "#1F4F47",
-                      borderColor: "#CFE5D5"
-                    }}
-                  >
-                    ← Back Home
-                  </button>
-                  <button
-                    onClick={downloadPatientReport}
-                    className="flex-1 px-6 py-3 text-white font-bold rounded-xl transition shadow-lg"
-                    style={{
-                      backgroundImage: "linear-gradient(135deg, #6EA89E, #8FC6B7)"
-                    }}
-                  >
-                    📥 Download Patient Report
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white/90 backdrop-blur-md rounded-3xl p-12 shadow-lg border-2 text-center" style={{ borderColor: "#CFE5D5" }}>
-                <p style={{ color: "#6EA89E", fontSize: "18px" }}>👈 Select a patient from the list to view their history</p>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

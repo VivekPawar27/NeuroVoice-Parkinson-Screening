@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import json
+import numpy as np
 from werkzeug.utils import secure_filename
 from services.neurovoice_service import predict_from_audio_file, load_keras_model, get_model_info
 import shutil
@@ -18,7 +19,7 @@ CORS(app)
 # Configuration
 UPLOAD_FOLDER = "uploads"
 MODELS_FOLDER = "models"
-ALLOWED_AUDIO_EXTENSIONS = {'wav', 'mp3', 'ogg', 'flac', 'wma', 'm4a'}
+ALLOWED_AUDIO_EXTENSIONS = {'wav', 'mp3', 'ogg', 'flac', 'wma', 'm4a', 'webm'}
 ALLOWED_MODEL_EXTENSIONS = {'keras', 'h5'}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -303,10 +304,6 @@ def ensure_serializable(obj):
         return bool(obj)
     else:
         return obj
-
-
-# Import numpy at the end to avoid circular imports
-import numpy as np
 
 
 if __name__ == "__main__":

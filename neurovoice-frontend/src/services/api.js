@@ -30,7 +30,7 @@ export const predictAudio = async (audioBlob, patientInfo = {}) => {
     if (patientInfo.dateOfBirth) formData.append("patient_dob", patientInfo.dateOfBirth);
     if (patientInfo.medicalHistory) formData.append("patient_history", patientInfo.medicalHistory);
 
-    const response = await fetch(`${API_BASE_URL}/predict`, {
+    const response = await fetch(`${API_BASE_URL}/api/predict`, {
       method: "POST",
       body: formData,
       headers: {
